@@ -49,6 +49,13 @@ class TextFeatureExtractor:
         word_counts = Counter(words_only)
         return dict(word_counts)
     
+    @property
+    def average_word_length(self):
+        words = [token for token in self.tokens if token.isalpha()]
+        if len(words) == 0: # Avoid division by zero if there are no words.
+            return 0
+        return sum(len(word) for word in words) / len(words)
+    
     def is_special_character(self, token):
         return any(c in string.punctuation for c in token)
     

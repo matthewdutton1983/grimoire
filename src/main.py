@@ -3,6 +3,7 @@ import logging
 import nltk
 import spacy
 import string
+from collections import Counter
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -27,9 +28,9 @@ class TextFeatureExtractor:
             tokens.extend(nltk.word_tokenize(space_separated_fragment))
             tokens.append(' ')
         return tokens[:-1]
-
+    
     @property
-    def original_text(text):
+    def original_text(self):
         return text
     
     @property
@@ -41,6 +42,12 @@ class TextFeatureExtractor:
         vectorizer = TfidfVectorizer()
         X = vectorizer.fit_transform([' '.join(self.tokens)])
         return dict(zip(vectorizer.get_feature_names(), X.toarray()[0]))
+    
+    @property
+    def word_frequency(self):
+        words_only = [token for token in self.tokens if token not in string.punctuation and not token.isspace()]
+        word_counts = Counter(words_only)
+        return dict(word_counts)
     
     def is_special_character(self, token):
         return any(c in string.punctuation for c in token)
@@ -75,9 +82,10 @@ class TextFeatureExtractor:
     
     def extract_features(self):
         logging.info('Extracting features from text...')
-        features = {}
-        for token in self.tokens:
-            features[token] = {
+        features = []
+        for i, token in enumerate(self.tokens):
+            features.append({
+                'token': token,
                 'is_special_character': self.is_special_character(token),
                 'casing': self.token_case(token),
                 'length': len(token),
@@ -85,6 +93,7 @@ class TextFeatureExtractor:
                 'is_digit': self.is_digit(token),
                 'is_linefeed': self.is_linefeed(token),
                 'is_stopword': self.is_stopword(token),
-                'offsets': self.char_offsets(token)      
-            }
+                'offsets': self.char_offsets(token),
+                'lowercase': token.lower()
+            })
         return features

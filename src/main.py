@@ -27,6 +27,10 @@ class TextFeatureExtractor:
             tokens.extend(nltk.word_tokenize(space_separated_fragment))
             tokens.append(' ')
         return tokens[:-1]
+
+    @property
+    def original_text(text):
+        return text
     
     @property
     def vocab(self):

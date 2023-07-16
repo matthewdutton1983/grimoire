@@ -1,48 +1,86 @@
-BATCH_SIZE = 250
-num_batches = len(unique_ids) // BATCH_SIZE
+import json
+import logging
+import nltk
+import spacy
+import string
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-document_ids = []
-document_names = []
-document_contents = []
+nltk.download("punkt")
+nltk.download("stopwords")
 
-def process_batch(batch_ids, batch_num):
-    token = get_access_token(username, password)
-    logging.info(f"Started processing batch {batch_num}/{num_batches}")
+logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] - %(message)s')
 
-    try:
-        batch_names = [get_document_name(document_id, token) for document_id in batch_ids]
-        batch_contents = [get_document_text(document_id, token) for document_id in batch_ids]
+class TextFeatureExtractor:
+    def __init__(self, text):
+        logging.info('Initializing TextFeatureExtractor...')
+        self.text = text
+        self.nlp = spacy.load('en_core_web_sm')
+        self.tokens = self.tokenize(text)
+        self.pos_tag_dict = self.pos_tags()
         
-        document_ids.append(batch_ids)
-        document_names.append(batch_names)
-        document_contents.append(batch_contents)
-    except Exception as e:
-        logging.error(f"Exception occurred while downloading batch {batch_num}: {e}")
-
-threads = []
-for i in range(num_batches):
-    start = i * BATCH_SIZE
-    end = (i + 1) * BATCH_SIZE
-    batch_ids = unique_ids[start:end]
-
-    t = threading.Thread(target=process_batch, args=(batch_ids, i + 1))
-    threads.append(t)
-    t.start()
-
-for t in threads:
-    t.join()
-
-remaining_ids = unique_ids[num_batches * BATCH_SIZE:]
-if remaining_ids:
-    logging.info("Starting processing remaining documents")
-    token = get_access_token(username, password)
-    try:
-        remaining_names = [get_document_name(remaining_id, token) for remaining_id in remaining_ids]
-        remaining_contents = [get_document_text(remaining_id, token) for remaining_id in remaining_ids]
-        
-        document_ids.append(remaining_ids)
-        document_names.append(remaining_names)
-        document_contents.append(remaining_contents)
-    except Exception as e:
-        logging.error(f"Exception occurred while downloading remaining documents: {e}")
-    logging.info("Finished processing all documents")
+    def tokenize(self, text):
+        logging.info('Tokenizing text...')
+        tokens = []
+        for space_separated_fragment in text.strip().split():
+            tokens.extend(nltk.word_tokenize(space_separated_fragment))
+            tokens.append(' ')
+        return tokens[:-1]
+    
+    @property
+    def vocab(self):
+        return dict((word, i) for i, word in enumerate(set(self.tokens)))
+    
+    @property
+    def tfidf_bow(self):
+        vectorizer = TfidfVectorizer()
+        X = vectorizer.fit_transform([' '.join(self.tokens)])
+        return dict(zip(vectorizer.get_feature_names(), X.toarray()[0]))
+    
+    def is_special_character(self, token):
+        return any(c in string.punctuation for c in token)
+    
+    def token_case(self, token):
+        if token.islower():
+            return 'lowercase'
+        elif token.isupper():
+            return 'uppercase'
+        elif token.istitle():
+            return 'capitalized'
+        else:
+            return 'mixed'
+    
+    def is_digit(self, token):
+        return token.isdigit()
+    
+    def is_linefeed(self, token):
+        return token == '\n'
+    
+    def is_stopword(self, token):
+        return token.lower() in nltk.corpus.stopwords.words('english')
+    
+    def pos_tags(self):
+        doc = self.nlp(' '.join(self.tokens))
+        return dict((token.text, token.pos_) for token in doc)
+    
+    def char_offsets(self, token):
+        start = self.text.find(token)
+        end = start + len(token)
+        return [start, end]
+    
+    def extract_features(self):
+        logging.info('Extracting features from text...')
+        features = {}
+        for token in self.tokens:
+            features[token] = {
+                'is_special_character': self.is_special_character(token),
+                'casing': self.token_case(token),
+                'length': len(token),
+                'pos_tag': self.pos_tag_dict.get(token, None),
+                'is_digit': self.is_digit(token),
+                'is_linefeed': self.is_linefeed(token),
+                'is_stopword': self.is_stopword(token),
+                'offsets': self.char_offsets(token)      
+            }
+        return features

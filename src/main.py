@@ -13,9 +13,9 @@ nltk.download("stopwords")
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] - %(message)s')
 
-class TextFeatureExtractor:
+class FeatureEngineer:
     def __init__(self, text):
-        logging.info('Initializing TextFeatureExtractor...')
+        logging.info('Initializing FeatureEngineer...')
         self.text = text
         self.nlp = spacy.load('en_core_web_sm')
         self.tokens = self.tokenize(text)

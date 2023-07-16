@@ -74,6 +74,9 @@ class FeatureEngineer:
             return 'capitalized'
         else:
             return 'mixed'
+            
+    def is_alpha(self, token):
+        return token.isalpha()
     
     def is_digit(self, token):
         return token.isdigit()
@@ -103,6 +106,7 @@ class FeatureEngineer:
                 'casing': self.token_case(token),
                 'length': len(token),
                 'pos_tag': self.pos_tag_dict.get(token, None),
+                'is_alpha': self.is_alpha(token),
                 'is_digit': self.is_digit(token),
                 'is_linefeed': self.is_linefeed(token),
                 'is_stopword': self.is_stopword(token),

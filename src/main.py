@@ -6,7 +6,7 @@ import string
 from collections import Counter
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 
 nltk.download("punkt")
 nltk.download("stopwords")
@@ -36,6 +36,12 @@ class TextFeatureExtractor:
     @property
     def vocab(self):
         return dict((word, i) for i, word in enumerate(set(self.tokens)))
+    
+    @property
+    def count_bow(self):
+        vectorizer = CountVectorizer()
+        X = vectorizer.fit_transform([' '.join(self.tokens)])
+        return dict(zip(vectorizer.get_feature_names(), X.toarray()[0]))
     
     @property
     def tfidf_bow(self):

@@ -1,9 +1,9 @@
 # Import native libraries
+import concurrent.futures
 import logging
 import pandas as pd
 import pickle
 import random
-import threading
 import uuid
 from datetime import datetime
 
@@ -69,37 +69,43 @@ class Corpus:
         response = requests.get(url=url, headers=headers, data=payload)
         return response.text
     
-    def _process_batch(self, batch_ids, batch_num, num_batches, domain, username, password, document_ids, document_metadata, document_contents):
+    def _process_batch(self, batch_ids, batch_num, num_batches, domain, username, password):
             token = self._get_access_token(domain, username, password)
             logging.info(f"Started processing batch {batch_num}/{num_batches}")
+            
+            batch_metadata = []
+            batch_contents = []
 
             try:
                 batch_metadata = [self._get_document_metadata(document_id, token) for document_id in batch_ids]
                 batch_contents = [self._get_document_text(document_id, token) for document_id in batch_ids]
-
-                document_ids.extend(batch_ids)
-                document_metadata.extend(batch_metadata)
-                document_contents.extend(batch_contents)
             except Exception as e:
                 logging.error(f"Exception occurred while downloading batch {batch_num}: {e}")
+
+            return batch_ids, batch_metadata, batch_contents
+
      
     def add_documents(self, document_ids, domain, username, password, batch_size):
         BATCH_SIZE = batch_size
         num_batches = len(document_ids) // BATCH_SIZE
 
-        document_ids = []
-        document_metadata = []
-        document_contents = []
+        all_document_ids = []
+        all_document_metadata = []
+        all_document_contents = []
 
-        threads = []
-        for i in range(num_batches):
-            start = i * BATCH_SIZE
-            end = (i + 1) * BATCH_SIZE
-            batch_ids = document_ids[start:end]
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = []
+            for i in range(num_batches):
+                start = i * BATCH_SIZE
+                end = (i + 1) * BATCH_SIZE
+                batch_ids = document_ids[start:end]
+                futures.append(executor.submit(self._process_batch, batch_ids, i + 1, num_batches, domain, username, password))
 
-            t = threading.Thread(target=self._process_batch, args=(batch_ids, i + 1, num_batches, domain, username, password, document_ids, document_metadata, document_contents))
-            threads.append(t)
-            t.start()
+            for future in concurrent.futures.as_completed(futures):
+                batch_ids, batch_metadata, batch_contents = future.result()
+                all_document_ids.extend(batch_ids)
+                all_document_metadata.extend(batch_metadata)
+                all_document_contents.extend(batch_contents)
 
         remaining_ids = document_ids[num_batches * BATCH_SIZE:]
         if remaining_ids:
@@ -107,20 +113,20 @@ class Corpus:
             token = self._get_access_token(domain, username, password)
             try:
                 remaining_metadata = [self._get_document_metadata(remaining_id, token) for remaining_id in remaining_ids]
-                remaining_contents = [self._get_document_text(remaining_id, token) for remaining_id in remaining_ids]
+                remaining_content = [self._get_document_text(remaining_id, token) for remaining_id in remaining_ids]
 
-                document_ids.extend(remaining_ids)
-                document_metadata.extend(remaining_metadata)
-                document_contents.extend(remaining_contents)
+                all_document_ids.extend(remaining_ids)
+                all_document_metadata.extend(remaining_metadata)
+                all_document_contents.extend(remaining_content)
             except Exception as e:
-                logging.error(f"Exception occurred while downloading remaining documents: {e}")
-            
-            logging.info("Finished processing all documents")
+                logging.error(f"Error occurred while downloading remaining documents")
+
+            logging.info("All documents have been downloaded and added to the corpus")
 
         self.df = pd.DataFrame({
-            "Document_ID": document_ids,
-            "Document_Metadata": document_metadata,
-            "Document_Contents": document_contents
+            "Document_ID": all_document_ids,
+            "Document_Metadata": all_document_metadata,
+            "Document_Content": all_document_contents
         })
 
     def save_corpus(self, filename):

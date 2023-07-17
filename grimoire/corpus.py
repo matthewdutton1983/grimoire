@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class Corpus:
     def __init__(self):
-        self.id = uuid.uuid.uuid4()
+        self.id = uuid.uuid4()
         self.created_date = datetime.now()
         self.documents = []
         self.df = pd.DataFrame()
@@ -67,7 +67,7 @@ class Corpus:
             response = requests.get(url=url, headers=headers, data=payload)
             return response.json()
         
-        def get_document_text(self, unique_id, token):
+        def get_document_text(unique_id, token):
             url = f"{DOCLINK_TEXT_URL}".format(unique_id)
             payload = {}
             headers = {
@@ -78,7 +78,7 @@ class Corpus:
             return response.text
 
         def process_batch(self, batch_ids, batch_num, num_batches, username, password):
-            token = self.get
+            token = get_access_token(username, password)
             logging.info(f"Started processing batch {batch_num}/{num_batches}")
 
             try:
@@ -123,7 +123,7 @@ class Corpus:
             "Document_Contents": document_contents
         })
 
-        self.df()
+        self.df
 
     def save_corpus(self, filename):
         with open(filename, "wb") as f:

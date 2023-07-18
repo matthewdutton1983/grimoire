@@ -19,10 +19,11 @@ class Corpus:
         self.id = uuid.uuid4()
         self.created_date = datetime.now()
         self.documents = []
-        self.id_to_index = {}
         self.connector = connector
+    
+        self.__id_to_index = {}
         
-        logging.info(f"Created new Corpus instance with ID: {self.id} at {self.created_date}")
+        logging.info(f"Created new Corpus instance: {self.id}")
 
     @property
     def view_info(self):
@@ -73,18 +74,18 @@ class Corpus:
         self.documents.extend(all_documents)
 
         for i, doc in enumerate(all_documents):
-            self.id_to_index[doc.id] = len(self.documents) - len(all_documents) + i
+            self.__id_to_index[doc.id] = len(self.documents) - len(all_documents) + i
     
     def get_document_by_id(self, document_id):
-        if document_id in self.id_to_index:
-            return self.documents[self.id_to_index[document_id]]
+        if document_id in self.__id_to_index:
+            return self.documents[self.__id_to_index[document_id]]
         else:
             logging.error(f"No document found with ID: {document_id}")
             return None
         
     def remove_documents(self, document_ids):
         self.documents = [doc for doc in self.documents if doc.id not in document_ids]
-        self.id_to_index = {id: i for i, id in enumerate(doc.id for doc in self.documents)}
+        self.__id_to_index = {id: i for i, id in enumerate(doc.id for doc in self.documents)}
         logging.info(f"Successfully removed documents from corpus: {document_ids}")
 
     def search_corpus(self, query):

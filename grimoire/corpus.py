@@ -1,7 +1,6 @@
 # Import native libraries
 import concurrent.futures
 import logging
-import pandas as pd
 import pickle
 import random
 import uuid
@@ -10,6 +9,8 @@ from datetime import datetime
 # Import third-party libraries
 import pandas as pd
 import requests
+from requests.exceptions import RequestException
+from retry import retry
 
 # Import project code
 from grimoire.config import CLIENT_ID, IDA_URL, RESOURCE, DOCLINK_METADATA_URL, DOCLINK_TEXT_URL
@@ -32,11 +33,12 @@ class Corpus:
     @property
     def view_info(self):
         return {
-            "id": self.id,
-            "created_date": self.created_date,
+            "id": str(self.id),
+            "created_date": self.created_date.isoformat(),
             "num_documents": len(self.df)
         }
     
+    @retry(RequestException, tries=3, delay=2, backoff=2)
     def _get_access_token(self, domain, username, password):
             url = IDA_URL
             payload = dict(
@@ -47,9 +49,11 @@ class Corpus:
                 resource = RESOURCE
             )
             response = requests.post(url, payload)
+            response.raise_for_status()
             token = response.json()["access_token"]
             return token
-        
+    
+    @retry(RequestException, tries=3, delay=2, backoff=2)
     def _get_document_metadata(self, unique_id, token):
         url = f"{DOCLINK_METADATA_URL}".format(unique_id)
         payload = {}
@@ -58,8 +62,10 @@ class Corpus:
             "Authorization": "Bearer" + token
         }
         response = requests.get(url=url, headers=headers, data=payload)
+        response.raise_for_status()
         return response.json()
     
+    @retry(RequestException, tries=3, delay=2, backoff=2)
     def _get_document_text(self, unique_id, token):
         url = f"{DOCLINK_TEXT_URL}".format(unique_id)
         payload = {}
@@ -68,6 +74,7 @@ class Corpus:
             "Authorization": "Bearer" + token
         }
         response = requests.get(url=url, headers=headers, data=payload)
+        response.raise_for_status()
         return response.text
     
     def _process_batch(self, batch_ids, batch_num, num_batches, domain, username, password):
@@ -130,6 +137,14 @@ class Corpus:
         })
 
         return self.df
+    
+    def remove_documents(self, document_ids):
+        self.df = self.df[~self.df["DOCUMENT_ID"].isin(document_ids)]
+        logging.info(f"Successfully removed documents from the corpus: {document_ids}")
+        return self.df
+
+    def random_sample(self, n):
+        return random.sample(self.documents, n)
 
     def save_corpus(self, filename):
         with open(filename, "wb") as f:
@@ -139,9 +154,4 @@ class Corpus:
     def load_corpus(filename):
         with open(filename, "rb") as f:
             return pickle.load(f)
-       
-    def remove_documents(self):
-        pass
-
-    def random_sample(self, n):
-        return random.sample(self.documents, n)
+    

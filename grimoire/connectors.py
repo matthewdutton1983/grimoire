@@ -17,17 +17,18 @@ class DoclinkConnector:
     @retry(RequestException, tries=3, delay=2, backoff=2)
     def get_access_token(self, domain, username, password):
             url = IDA_URL
-            payload = dict(
-                client_id = CLIENT_ID,
-                grant_type = "password",
-                username = domain + "\\" + username,
-                password = password,
-                resource = RESOURCE
-            )
+            payload = {
+                 "client_id": CLIENT_ID,
+                "grant_type": "password",
+                "username": domain + "\\" + username,
+                "password": password,
+                "resource": RESOURCE
+            }
             response = requests.post(url, payload)
             response.raise_for_status()
-            token = response.json()["access_token"]
-            return token
+            
+            return response.json()["access_token"]
+    
     
     @retry(RequestException, tries=3, delay=2, backoff=2)
     def get_document_metadata(self, unique_id, token):
@@ -39,6 +40,7 @@ class DoclinkConnector:
         }
         response = requests.get(url=url, headers=headers, data=payload)
         response.raise_for_status()
+        
         return response.json()
     
     @retry(RequestException, tries=3, delay=2, backoff=2)
@@ -51,6 +53,7 @@ class DoclinkConnector:
         }
         response = requests.get(url=url, headers=headers, data=payload)
         response.raise_for_status()
+        
         return response.text
     
     def process_batch(self, batch_ids, batch_num, num_batches, domain, username, password):

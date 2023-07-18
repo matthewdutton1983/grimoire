@@ -14,21 +14,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 
 class DoclinkConnector:
+    def __init__(self):
+        logging.info("Created new DoclinkConnector instance")
+
     @retry(RequestException, tries=3, delay=2, backoff=2)
     def get_access_token(self, domain, username, password):
             url = IDA_URL
             payload = {
                  "client_id": CLIENT_ID,
-                "grant_type": "password",
-                "username": domain + "\\" + username,
-                "password": password,
-                "resource": RESOURCE
+                 "grant_type": "password",
+                 "username": domain + "\\" + username,
+                 "password": password,
+                 "resource": RESOURCE
             }
             response = requests.post(url, payload)
             response.raise_for_status()
             
             return response.json()["access_token"]
-    
     
     @retry(RequestException, tries=3, delay=2, backoff=2)
     def get_document_metadata(self, unique_id, token):

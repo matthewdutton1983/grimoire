@@ -27,13 +27,14 @@ class Corpus:
         self.documents = []
         self.df = pd.DataFrame()
         
-        logging.info(f"Created a new Corpus instance with ID: {self.id} at {self.created_date}")
+        logging.info(f"Created new Corpus instance with ID: {self.id} at {self.created_date}")
 
+    @property
     def view_info(self):
         return {
             "id": self.id,
             "created_date": self.created_date,
-            "num_documents": len(self.documents)
+            "num_documents": len(self.df)
         }
     
     def _get_access_token(self, domain, username, password):
@@ -84,7 +85,6 @@ class Corpus:
 
             return batch_ids, batch_metadata, batch_contents
 
-     
     def add_documents(self, document_ids, domain, username, password, batch_size):
         BATCH_SIZE = batch_size
         num_batches = len(document_ids) // BATCH_SIZE
@@ -121,13 +121,15 @@ class Corpus:
             except Exception as e:
                 logging.error(f"Error occurred while downloading remaining documents")
 
-            logging.info("All documents have been downloaded and added to the corpus")
+        logging.info("All documents have been downloaded and added to the corpus")
 
         self.df = pd.DataFrame({
-            "Document_ID": all_document_ids,
-            "Document_Metadata": all_document_metadata,
-            "Document_Content": all_document_contents
+            "DOCUMENT_ID": all_document_ids,
+            "DOCUMENT_METADATA": all_document_metadata,
+            "DOCUMENT_CONTENT": all_document_contents
         })
+
+        return self.df
 
     def save_corpus(self, filename):
         with open(filename, "wb") as f:

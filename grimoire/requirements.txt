@@ -1,1 +1,13 @@
 
+flair
+gensim
+keras
+nltk
+pattern
+requests
+retry
+segtok
+spacy
+stanza
+transformers
+textblob

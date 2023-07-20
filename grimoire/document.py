@@ -1,9 +1,6 @@
 # Import native libraries
 from datetime import datetime
 
-# Import project code
-from grimoire.dictionary import Dictionary
-
 
 class Document:
     def __init__(self, id, text, attributes):
@@ -11,13 +8,9 @@ class Document:
         self.date_added = str(datetime.now())
         self.text = text
         self.attributes = attributes
+        self.vocabulary = set()
         
-    @property
-    def view_info(self):
-        return {
-            "id": str(self.id),
-            "date_added": self.date_added,
-            "text": self.text,
-            "attributes": self.attributes
-        }
-          
+    def build_vocabulary(self, tokenizer):
+        tokens = tokenizer.tokenize(self.text)
+        words = [token.lower() for token in tokens if token.isalpha()]
+        self.vocabulary.update(words)

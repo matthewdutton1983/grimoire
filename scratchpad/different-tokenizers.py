@@ -1,3 +1,10 @@
+def tokenizer(cls):
+    tokenizer.tokenizers.append(cls)
+    return cls
+
+
+tokenizer.tokenizers = []
+
 # Import built-in libraries
 import logging
 from abc import ABC, abstractmethod

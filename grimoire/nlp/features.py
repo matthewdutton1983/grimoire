@@ -32,10 +32,10 @@ class Features:
 
     @classmethod
     def extract_features(cls, text):
+        logger.info("Extracting features ...")
+        
         features = cls()
         doc = cls.nlp(text)
-        
-        logger.info("Extracting features ...")
         
         features.noun_chunks = list(doc.noun_chunks)
         features.tokens = [token for token in doc]
@@ -56,13 +56,12 @@ class Features:
         
         return features
     
-    @classmethod
-    def summarize_features(cls):
-        features = cls()
+
+    def summarize_features(self):
         columns = ["TOKEN", "LEMMA", "POS", "TAG", "DEP", "SHAPE", "ALPHA", "STOP", "LOWER", "UPPER", "TITLE", "NUMERIC"]
-        data = zip(features.tokens, features.lemma, features.syntax, features.tags, features.dep,
-            features.shape, features.alpha, features.stopword, features.lowercase,
-            features.uppercase, features.titlecase, features.numeric
+        data = zip(
+            self.tokens, self.lemma, self.syntax, self.tags, self.dep, self.shape, self.alpha, 
+            self.stopword, self.lowercase, self.uppercase, self.titlecase, self.numeric
         )
         df = pd.DataFrame(data, columns=columns)
         return df

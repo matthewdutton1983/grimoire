@@ -2,13 +2,8 @@
 import os
 from datetime import datetime
 
-# Import third-party libraries
-import spacy
-
 # Import project code
 from grimoire.nlp.features import Features
-
-nlp = spacy.load("/models/en_core_web_lg-3.4.0")
 
 
 class Document:
@@ -17,14 +12,8 @@ class Document:
         self.date_added = str(datetime.now())
         self.added_by = os.getlogin()
         self.text = text
-        self.attributes = attributes    
-        self.features = Features()
-        self.vocabulary = []
+        self.attributes = attributes
+        self.features = Features()    
 
     def extract_features(self):
-        self.features = nlp(self.text)
-
-    def build_vocabulary(self, tokenizer):
-        tokens = tokenizer.tokenize(self.text)
-        words = [token.lower() for token in tokens if token.isalpha()]
-        self.vocabulary = sorted(list(set(words)))
+        self.features = Features.extract_features(self)

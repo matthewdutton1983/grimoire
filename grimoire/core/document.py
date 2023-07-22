@@ -16,4 +16,4 @@ class Document:
         self.features = Features()    
 
     def extract_features(self):
-        self.features = Features.extract_features(self)
+        self.features = Features.extract_features(self.text)

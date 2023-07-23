@@ -8,15 +8,19 @@ import spacy
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Token
-# LinguisticParser
-# Lemmatizer
-# DependencyParser
-# NamedEntityParser
-# Tokenizer
-# SentenceSegmenter
-# Embedder
-# Preprocessor
+# Corpus - highest level class containing a collection of Documents
+# Document - class represents an individual document
+# Doc - spaCy Doc object containing linguistic annotations
+# Token - parse Doc object to find individual segments
+# LinguisticParser - assigns tags and labels to each Token
+# Lemmatizer - finds the base form of a word
+# DependencyParser - detect dependencies between tokenss
+# NamedEntityParser - identifies named entities
+# Tokenizer - split text into individual tokens (eg each word)
+# SentenceSegmenter - split text into sentence tokens
+# Embedder - convert text into vectors
+# Preprocessor - functions for cleaning and transforming text
+# Splitter - functions for splitting text into smaller chunks
 
 
 class Features:
